@@ -1,0 +1,12 @@
+- name: Prepare public documentation
+  run: python3 scripts/prepare_release.py
+- name: Set macOS deployment target
+  if: runner.os == 'macOS'
+  run: echo 'MACOSX_DEPLOYMENT_TARGET=13.0' >> "$GITHUB_ENV"
+- name: Test before building release artifacts
+  run: |
+    python3 --version
+    jq --version
+    cargo fmt --check
+    cargo clippy --locked --all-targets -- -D warnings
+    cargo test --locked

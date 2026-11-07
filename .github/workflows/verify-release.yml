@@ -1,0 +1,86 @@
+name: Verify release archives and Homebrew
+
+on:
+  workflow_call:
+    inputs:
+      plan:
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  publishing-setup:
+    if: ${{ github.event_name == 'push' && (!fromJson(inputs.plan).announcement_is_prerelease || fromJson(inputs.plan).publish_prereleases) }}
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Check Homebrew publishing access before releasing
+        env:
+          GH_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+        run: |
+          : "${GH_TOKEN:?Set HOMEBREW_TAP_TOKEN before publishing}"
+          gh api repos/KijitoraFinch/homebrew-tap > /dev/null
+
+  archives:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            target: aarch64-apple-darwin
+          - runner: macos-15-intel
+            target: x86_64-apple-darwin
+          - runner: ubuntu-22.04-arm
+            target: aarch64-unknown-linux-gnu
+          - runner: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: artifacts-build-local-*
+          path: target/distrib
+          merge-multiple: true
+      - name: Verify the native archive
+        env:
+          VERSION: ${{ fromJson(inputs.plan).releases[0].app_version }}
+          TARGET: ${{ matrix.target }}
+        run: python3 scripts/verify_release.py "target/distrib/monika-${TARGET}.tar.gz" --version "$VERSION"
+
+  homebrew:
+    needs: archives
+    runs-on: macos-15
+    env:
+      HOMEBREW_NO_AUTO_UPDATE: "1"
+      HOMEBREW_NO_INSTALL_CLEANUP: "1"
+      HOMEBREW_NO_ANALYTICS: "1"
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: artifacts-build-local-*
+          path: target/distrib
+          merge-multiple: true
+      - name: Install dist
+        shell: bash
+        run: curl --proto '=https' --tlsv1.2 -LsSf https://github.com/axodotdev/cargo-dist/releases/download/v0.33.1/cargo-dist-installer.sh | sh
+      - name: Generate the Formula using the built archives
+        env:
+          TAG: ${{ fromJson(inputs.plan).announcement_tag }}
+        run: dist build --artifacts=global --tag="$TAG"
+      - name: Install the Formula from local release archives
+        env:
+          VERSION: ${{ fromJson(inputs.plan).releases[0].app_version }}
+        run: |
+          brew tap-new monika/release-check
+          python3 scripts/check_homebrew.py prepare "$(brew --repository monika/release-check)/Formula/monika.rb"
+          brew install monika/release-check/monika
+          python3 scripts/check_homebrew.py verify "$(brew --prefix monika)" --version "$VERSION"
+          brew uninstall monika
+          brew untap monika/release-check

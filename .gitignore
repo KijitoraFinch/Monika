@@ -1,0 +1,26 @@
+target/
+*.swp
+*.swo
+__pycache__/
+
+# Local development instructions, designs, and investigation notes
+AGENTS.md
+DESIGNDOC.md
+/concept_explain.md
+/extension_concept.md
+/DEVELOPMENT_note.md
+/IMPLEMENTATION.md
+/REVIEW_NOTES.md
+/AGENT_TRIAL_NOTES.md
+/QUERY_COMPARISON.md
+/docs/memos/
+/docs/proposals/
+
+# Demo slides and supporting materials
+/docs/presentations/
+
+# Local Agent trials and benchmark workspaces
+/.playground/
+/scripts/playground.py
+/scripts/save_session.py
+/Justfile
