@@ -20,6 +20,8 @@ TARGETS = (
 def prepare(destination, targets):
     artifacts = ROOT / "target/distrib"
     formula = (artifacts / "monika.rb").read_text()
+    if not re.search(r'^  license "MIT"$', formula, re.MULTILINE):
+        raise ValueError("Formula must declare the Monika MIT license")
     pattern = r'url "https://github.com/KijitoraFinch/Monika/releases/download/[^/]+/(monika-([a-z0-9_-]+)\.tar\.gz)"\s+sha256 "([a-f0-9]{64})"'
     matches = list(re.finditer(pattern, formula))
     if sorted(match[2] for match in matches) != sorted(targets):
@@ -47,8 +49,15 @@ def verify(prefix, version):
     for relative in DOCUMENTS:
         if not (documentation / relative).is_file():
             raise ValueError(f"missing installed document: {relative}")
+        if (documentation / relative).read_bytes() != (ROOT / relative).read_bytes():
+            raise ValueError(f"installed document differs from the reviewed source: {relative}")
     subprocess.run(
         ["python3", str(documentation / "examples/demo.py"), "--monika", str(binary)],
+        cwd=prefix,
+        check=True,
+    )
+    subprocess.run(
+        ["python3", str(documentation / "examples/bundled_demo.py"), "--monika", str(binary)],
         cwd=prefix,
         check=True,
     )

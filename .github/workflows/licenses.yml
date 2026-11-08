@@ -1,0 +1,28 @@
+name: License notices
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  licenses:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Set up Rust
+        run: rustup show active-toolchain
+      - name: Install cargo-about 0.9.3
+        run: |
+          curl --proto '=https' --tlsv1.2 -fLsS https://github.com/EmbarkStudios/cargo-about/releases/download/0.9.3/cargo-about-0.9.3-x86_64-unknown-linux-musl.tar.gz -o "$RUNNER_TEMP/cargo-about.tar.gz"
+          echo "3ad1e94ea1e63d69d1961f4fb15ccbbe9575d906111f96d2cb4dce6df48f71b4  $RUNNER_TEMP/cargo-about.tar.gz" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/cargo-about.tar.gz" -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/cargo-about-0.9.3-x86_64-unknown-linux-musl" >> "$GITHUB_PATH"
+      - name: Verify dependency licenses and notices
+        run: python3 scripts/license_notices.py --check

@@ -11,6 +11,9 @@ permissions:
   contents: read
 
 jobs:
+  licenses:
+    uses: ./.github/workflows/licenses.yml
+
   publishing-setup:
     if: ${{ github.event_name == 'push' && (!fromJson(inputs.plan).announcement_is_prerelease || fromJson(inputs.plan).publish_prereleases) }}
     runs-on: ubuntu-22.04

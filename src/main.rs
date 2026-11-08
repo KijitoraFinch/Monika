@@ -47,7 +47,10 @@ struct AtArgs {
 #[derive(Subcommand)]
 enum Command {
     /// Create monika.json and monika.links.json (edit them with ordinary tools)
-    Init,
+    Init {
+        #[arg(long, help = "Create an empty extension configuration")]
+        bare: bool,
+    },
     /// Emit each saved Link after expansion and normalization; no observation
     Links,
     /// Read a Target from each input; emit {input, selector, region, observations}
@@ -139,7 +142,7 @@ enum Command {
         )]
         keep: Vec<String>,
     },
-    /// Inspect and test configured external extensions
+    /// Inspect, enable and test extensions
     Extension {
         #[command(subcommand)]
         command: ExtensionCommand,
@@ -155,7 +158,22 @@ enum CaptureEndpoint {
 #[derive(Subcommand)]
 enum ExtensionCommand {
     /// Emit each configured extension's manifest
-    List,
+    List {
+        #[arg(
+            long,
+            help = "List all bundled extensions instead of configured extensions"
+        )]
+        bundled: bool,
+    },
+    /// Register bundled extensions in an existing monika.json
+    Enable {
+        #[arg(required_unless_present = "all", conflicts_with = "all")]
+        names: Vec<String>,
+        #[arg(long)]
+        all: bool,
+    },
+    #[command(hide = true)]
+    Serve { name: String },
     /// Emit an extension's manifest
     Show { name: String },
     /// Test comparison laws for a JSON array of Targets (RegionSelectors or named targets)
@@ -190,15 +208,43 @@ async fn execute(cli: Cli, host: &mut Host) -> Result<u8> {
         Some(root) => root,
         None => Workspace::discover_root(&std::env::current_dir()?).await?,
     };
-    let workspace = Workspace::open(&root).await?;
-    if matches!(cli.command, Command::Init) {
+    let mut workspace = Workspace::open(&root).await?;
+    if let Command::Init { bare } = &cli.command {
+        if !bare {
+            workspace.config = monika::bundled::default_config();
+        }
         emit(&json!({"config": workspace.initialize().await?})).await?;
+        return Ok(0);
+    }
+    if let Command::Extension {
+        command: ExtensionCommand::Enable { names, all },
+    } = &cli.command
+    {
+        let selected = if *all {
+            monika::bundled::NAMES
+                .iter()
+                .map(|name| (*name).into())
+                .collect()
+        } else {
+            names.clone()
+        };
+        monika::bundled::enable(&workspace, &selected).await?;
+        emit(&json!({"enabled": selected})).await?;
+        return Ok(0);
+    }
+    if let Command::Extension {
+        command: ExtensionCommand::List { bundled: true },
+    } = &cli.command
+    {
+        for name in monika::bundled::NAMES {
+            emit(&monika::bundled::manifest(name)?).await?;
+        }
         return Ok(0);
     }
     let mut engine = Engine::new(Session::new(workspace), host)?;
     let mut exit = 0;
     match cli.command {
-        Command::Init => unreachable!(),
+        Command::Init { .. } => unreachable!(),
         Command::Links => {
             for link in operations::links(&mut engine).await? {
                 emit(&link).await?;
@@ -306,12 +352,13 @@ async fn execute(cli: Cli, host: &mut Host) -> Result<u8> {
             emit(&monika::storage::gc(&engine.session.workspace, &keep, dry_run).await?).await?;
         }
         Command::Extension { command } => match command {
-            ExtensionCommand::List => {
+            ExtensionCommand::List { .. } => {
                 for manifest in engine.manifests().await? {
                     emit(&manifest).await?;
                 }
             }
             ExtensionCommand::Show { name } => emit(&engine.manifest(&name).await?).await?,
+            ExtensionCommand::Enable { .. } | ExtensionCommand::Serve { .. } => unreachable!(),
             ExtensionCommand::Test { cases } => {
                 let targets: Vec<monika::model::Target> =
                     serde_json::from_value(Input::open(&cases).one().await?)?;
@@ -337,9 +384,8 @@ async fn execute(cli: Cli, host: &mut Host) -> Result<u8> {
     Ok(exit)
 }
 
-async fn run() -> Result<u8> {
+async fn run(cli: Cli) -> Result<u8> {
     let mut signals = Signals::new()?;
-    let cli = Cli::parse();
     let mut host = Host::default();
     let mut interruption = None;
     let result = tokio::select! {
@@ -382,11 +428,24 @@ async fn run() -> Result<u8> {
 }
 
 fn main() -> ExitCode {
+    let cli = Cli::parse();
+    if let Command::Extension {
+        command: ExtensionCommand::Serve { name },
+    } = &cli.command
+    {
+        return match monika::bundled::serve(name) {
+            Ok(()) => ExitCode::SUCCESS,
+            Err(error) => {
+                eprintln!("{error:#}");
+                ExitCode::from(2)
+            }
+        };
+    }
     let runtime = tokio::runtime::Builder::new_multi_thread()
         .enable_all()
         .build()
         .expect("create Tokio runtime");
-    let result = runtime.block_on(run());
+    let result = runtime.block_on(run(cli));
     // A blocking stdin read cannot be cancelled. Child processes were shut down
     // above; process exit must not wait for the input producer to close stdin.
     runtime.shutdown_background();

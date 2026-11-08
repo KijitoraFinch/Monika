@@ -231,7 +231,12 @@ impl Worker {
     pub fn spawn(root: &Path, extension: &ProcessExtension) -> Result<Self> {
         ensure!(!extension.command.is_empty(), "extension command is empty");
         let stderr = tempfile::NamedTempFile::new()?;
-        let mut command = Command::new(&extension.command[0]);
+        let executable = if extension.command[0] == "@monika" {
+            std::env::current_exe().context("locate bundled extension executable")?
+        } else {
+            PathBuf::from(&extension.command[0])
+        };
+        let mut command = Command::new(executable);
         command
             .args(&extension.command[1..])
             .current_dir(root)

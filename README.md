@@ -51,15 +51,15 @@ monika init
 monika --help
 ```
 
-Resource の観測・Region の解決には拡張の登録が必要です。同梱予定のファイル・Markdown・コード拡張は現在準備中です。[Agent 向け利用ガイド](https://github.com/KijitoraFinch/Monika/blob/main/docs/AGENT_GUIDE.md) と [拡張 API](https://github.com/KijitoraFinch/Monika/blob/main/EXTENSIONS.md) を参照してください。同じ文書は配布物の `documentation/` にもあります。JSON の選択・集計には jq を使い、パイプでは `set -o pipefail` を有効にします。Homebrew では jq も依存として導入します。
+`monika init` は15種類の同梱拡張を登録します。文書（テキスト・Markdown・HTML）、データ（JSON・JSON Lines・YAML・TOML・CSV・TSV）、11言語・構文のコードを選択でき、ファイル・HTTP/HTTPS・Git の観測と組み合わせられます。引用元を表す `anchor` と注釈検査の `assert` もあります。[同梱拡張の使い方](https://github.com/KijitoraFinch/Monika/blob/main/BUNDLED_EXTENSIONS.md)、[Agent 向け利用ガイド](https://github.com/KijitoraFinch/Monika/blob/main/docs/AGENT_GUIDE.md)、[拡張 API](https://github.com/KijitoraFinch/Monika/blob/main/EXTENSIONS.md) を参照してください。同じ文書は配布物の `documentation/` にもあります。JSON の選択・集計には jq を使い、パイプでは `set -o pipefail` を有効にします。Homebrew では jq も依存として導入します。
 
 アーカイブ内の操作例は、Python 3.9 以降と jq を使って試せます。以下のパスはアーカイブを展開したディレクトリを基準としています。
 
 ```sh
-python3 documentation/examples/demo.py --monika ./monika
+python3 documentation/examples/bundled_demo.py --monika ./monika
 ```
 
-試験用拡張を使う一時プロジェクトで、Link の読み取り・比較・Capture・変更検出・GC を実行します。
+同梱拡張を使う一時プロジェクトで、文書・コード・データの選択、比較、Capture、変更検出、GC を実行します。外部拡張と jq パイプの例は `documentation/examples/demo.py` にあります。同梱拡張そのものの利用には Python は不要です。`git:` の観測には Git が必要です。
 
 ## ソースからビルド
 
@@ -68,3 +68,7 @@ cargo install --path . --locked
 ```
 
 必要な Rust の版は `rust-toolchain.toml` に指定しています。
+
+## ライセンス
+
+Monika 本体は [MIT License](https://github.com/KijitoraFinch/Monika/blob/main/LICENSE) です。依存するソフトウェアと素材の条件は [Third-party notices](https://github.com/KijitoraFinch/Monika/blob/main/THIRD_PARTY_NOTICES.md) にまとめています。配布物にも `documentation/THIRD_PARTY_NOTICES.md` とライセンス全文を同梱します。

@@ -4,7 +4,7 @@ Monika は、将来の自分や別の Agent が、設計意図・仕様・実装
 
 ## 対象に合う拡張を用意する
 
-既存のプロジェクトでは `monika.json` と `monika extension list` / `show NAME` を確認してください。Resource の観測も拡張の役割で、ローカルファイルにも提供元の登録が必要です。ファイル・Markdown・コードの同梱拡張は今後別途作成します。対象に合う拡張を Agent 自身が作って登録できます。
+既存のプロジェクトでは `monika.json` と `monika extension list` / `show NAME` を確認してください。Resource の観測も拡張の役割です。`monika init` は文書・コード・データの解釈と、ファイル・HTTP・Git の観測を含む [同梱拡張](../BUNDLED_EXTENSIONS.md) を登録します。既存設定への追加には `monika extension enable NAME...` を使います。対象に合う拡張を Agent 自身が作って登録できます。
 
 RegionSelector の `query`、Region の `content`、同一性と包含の判定は拡張が定めます。解決中の拡張は必要な Resource を Core に要求し、Core が選んだ Observation を解釈します。現在と Capture の変化の判定には `content` だけを使うため、見直す必要がある情報をそこに含めます。LS など既存の仕組みも利用できます。
 

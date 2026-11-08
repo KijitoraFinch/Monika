@@ -8,7 +8,7 @@ import subprocess
 import tarfile
 import tempfile
 
-from prepare_release import DOCUMENTS
+from prepare_release import DOCUMENTS, ROOT
 
 
 def verify(archive, version):
@@ -19,7 +19,7 @@ def verify(archive, version):
         raise ValueError(f"checksum mismatch: {archive.name}")
 
     directory = archive.name.removesuffix(".tar.gz")
-    expected = {f"{directory}/monika", f"{directory}/README.md"}
+    expected = {f"{directory}/monika", f"{directory}/README.md", f"{directory}/LICENSE"}
     expected.update(f"{directory}/documentation/{name}" for name in DOCUMENTS)
     with tempfile.TemporaryDirectory(prefix="monika-release-check-") as temporary:
         root = Path(temporary).resolve()
@@ -41,7 +41,11 @@ def verify(archive, version):
             raise ValueError(f"unexpected executable version: {output}")
 
         documentation = bundle / "documentation"
+        if (bundle / "LICENSE").read_bytes() != (ROOT / "LICENSE").read_bytes():
+            raise ValueError("archive MIT license does not match the reviewed license")
         for name in DOCUMENTS:
+            if (documentation / name).read_bytes() != (ROOT / name).read_bytes():
+                raise ValueError(f"archive document differs from the reviewed source: {name}")
             if not name.endswith(".md"):
                 continue
             source = documentation / name
@@ -56,6 +60,11 @@ def verify(archive, version):
         # Run the copy in the archive, so the checkout cannot supply missing files.
         subprocess.run(
             ["python3", str(documentation / "examples/demo.py"), "--monika", str(binary)],
+            cwd=root,
+            check=True,
+        )
+        subprocess.run(
+            ["python3", str(documentation / "examples/bundled_demo.py"), "--monika", str(binary)],
             cwd=root,
             check=True,
         )

@@ -1,10 +1,12 @@
 # 外部拡張 API v1
 
-Link と注釈の正本は Core が管理する Sidecar です。外部拡張は Resource の観測、Observation からの Region の解決、Region の比較、注釈の検査を提供します。同梱のファイル・Markdown・コード拡張はまだありません。`tests/fixtures/sets_extension.py` は試験用の作例です。
+Link と注釈の正本は Core が管理する Sidecar です。外部拡張は Resource の観測、Observation からの Region の解決、Region の比較、注釈の検査を提供します。[同梱拡張](BUNDLED_EXTENSIONS.md) も同じ API で動作します。`tests/fixtures/sets_extension.py` は試験用の作例です。
 
 ## 登録と Resource の表記
 
 プロジェクトルートの `monika.json` に登録します。コマンドはシェルを介さず起動し、作業ディレクトリはルートです。
+
+`monika init` は同梱拡張を登録します。空の設定には `monika init --bare` を使います。コマンドの先頭の `@monika` は起動中の Monika の実行ファイルに置き換わります。
 
 ```json
 {

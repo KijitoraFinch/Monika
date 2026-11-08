@@ -3,6 +3,7 @@ name = "monika"
 version = "0.1.0"
 edition = "2024"
 description = "Inspectable links between documents, code, and data"
+license = "MIT"
 repository = "https://github.com/KijitoraFinch/Monika"
 homepage = "https://github.com/KijitoraFinch/Monika"
 publish = false
@@ -14,11 +15,29 @@ serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["arbitrary_precision", "raw_value"] }
 sha2 = "0.10"
 url = "2"
+percent-encoding = "2"
 tempfile = "3"
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "process", "signal", "io-util", "io-std", "fs", "sync", "time"] }
 tokio-util = { version = "0.7", features = ["codec"] }
 futures-util = "0.3"
 process-wrap = { version = "10", default-features = false, features = ["tokio1", "process-group", "job-object", "kill-on-drop"] }
+pulldown-cmark = "0.13"
+scraper = "0.24"
+csv = "1"
+toml = "0.9"
+serde_yaml_ng = "0.10"
+tree-sitter = "0.25"
+tree-sitter-rust = "0.24.2"
+tree-sitter-python = "0.25.0"
+tree-sitter-javascript = "0.25.0"
+tree-sitter-typescript = "0.23.2"
+tree-sitter-go = "0.25.0"
+tree-sitter-java = "0.23.5"
+tree-sitter-c = "0.24.2"
+tree-sitter-cpp = "0.23.4"
+tree-sitter-ruby = "0.23.1"
+tree-sitter-bash = "0.25.1"
+reqwest = { version = "0.12", default-features = false, features = ["blocking", "rustls-tls"] }
 
 [target.'cfg(unix)'.dependencies]
 nix = { version = "0.31", default-features = false }
