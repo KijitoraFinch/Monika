@@ -19,7 +19,9 @@ def verify(archive, version):
         raise ValueError(f"checksum mismatch: {archive.name}")
 
     directory = archive.name.removesuffix(".tar.gz")
-    expected = {f"{directory}/monika", f"{directory}/README.md", f"{directory}/LICENSE"}
+    root_documents = ("README.md", "LICENSE", "CHANGELOG.md")
+    expected = {f"{directory}/monika"}
+    expected.update(f"{directory}/{name}" for name in root_documents)
     expected.update(f"{directory}/documentation/{name}" for name in DOCUMENTS)
     with tempfile.TemporaryDirectory(prefix="monika-release-check-") as temporary:
         root = Path(temporary).resolve()
@@ -41,8 +43,9 @@ def verify(archive, version):
             raise ValueError(f"unexpected executable version: {output}")
 
         documentation = bundle / "documentation"
-        if (bundle / "LICENSE").read_bytes() != (ROOT / "LICENSE").read_bytes():
-            raise ValueError("archive MIT license does not match the reviewed license")
+        for name in root_documents:
+            if (bundle / name).read_bytes() != (ROOT / name).read_bytes():
+                raise ValueError(f"archive document differs from the reviewed source: {name}")
         for name in DOCUMENTS:
             if (documentation / name).read_bytes() != (ROOT / name).read_bytes():
                 raise ValueError(f"archive document differs from the reviewed source: {name}")
