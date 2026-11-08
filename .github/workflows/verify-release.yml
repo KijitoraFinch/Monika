@@ -14,17 +14,6 @@ jobs:
   licenses:
     uses: ./.github/workflows/licenses.yml
 
-  publishing-setup:
-    if: ${{ github.event_name == 'push' && (!fromJson(inputs.plan).announcement_is_prerelease || fromJson(inputs.plan).publish_prereleases) }}
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Check Homebrew publishing access before releasing
-        env:
-          GH_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
-        run: |
-          : "${GH_TOKEN:?Set HOMEBREW_TAP_TOKEN before publishing}"
-          gh api repos/KijitoraFinch/homebrew-tap > /dev/null
-
   archives:
     strategy:
       fail-fast: false

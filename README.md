@@ -4,7 +4,7 @@ LLM エージェントのための知識管理ツールチェインです。設�
 
 ## インストール
 
-初回リリースの準備中です。公開後は [GitHub Releases](https://github.com/KijitoraFinch/Monika/releases) と Homebrew から導入できます。
+[GitHub Releases](https://github.com/KijitoraFinch/Monika/releases) と Homebrew から導入できます。
 
 ### GitHub Releases
 
@@ -37,7 +37,8 @@ Linux ではチェックサムの確認に `sha256sum -c FILE.sha256` を使え�
 ### Homebrew
 
 ```sh
-brew install KijitoraFinch/tap/monika
+brew tap KijitoraFinch/monika https://github.com/KijitoraFinch/Monika
+brew install KijitoraFinch/monika/monika
 monika --version
 ```
 

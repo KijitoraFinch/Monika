@@ -6,8 +6,11 @@ cargo-dist-version = "0.33.1"
 ci = ["github"]
 hosting = ["github"]
 installers = ["homebrew"]
-tap = "KijitoraFinch/homebrew-tap"
-publish-jobs = ["homebrew"]
+tap = "KijitoraFinch/Monika"
+publish-jobs = ["./publish-homebrew"]
+github-custom-job-permissions = { "publish-homebrew" = { contents = "write" } }
+# Prepare a draft with reviewed release notes before pushing the version tag.
+create-release = false
 targets = [
     "aarch64-apple-darwin",
     "x86_64-apple-darwin",

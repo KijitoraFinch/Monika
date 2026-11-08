@@ -1,0 +1,42 @@
+name: Publish Homebrew Formula
+
+on:
+  workflow_call:
+    inputs:
+      plan:
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    if: ${{ !fromJson(inputs.plan).announcement_is_prerelease || fromJson(inputs.plan).publish_prereleases }}
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: main
+      - uses: actions/download-artifact@v8
+        with:
+          name: artifacts-build-global
+          path: ${{ runner.temp }}/release-global
+      - name: Verify the published Formula and commit it to the Tap
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ fromJson(inputs.plan).announcement_tag }}
+          VERSION: ${{ fromJson(inputs.plan).releases[0].app_version }}
+        run: |
+          gh release download "$TAG" --pattern monika.rb --dir "$RUNNER_TEMP/published"
+          cmp "$RUNNER_TEMP/release-global/monika.rb" "$RUNNER_TEMP/published/monika.rb"
+          mkdir -p Formula
+          cp "$RUNNER_TEMP/release-global/monika.rb" Formula/monika.rb
+          git config user.name KijitoraFinch
+          git config user.email KijitoraFinch-caffeine@proton.me
+          git add Formula/monika.rb
+          if ! git diff --cached --quiet; then
+            git commit -m "Update Homebrew Formula to monika $VERSION"
+            git push origin HEAD:main
+          fi
